@@ -82,7 +82,7 @@ export const followUser = async (req, res) => {
     } else {
         try {
             //defining who you're trying to follow
-            const followUser = await UserModel.findById(followUser)
+            const followUser = await UserModel.findById(id)
             //defining the user who is doing the following
             const follower = await UserModel.findById(currentUserId)
             //if the you are NOT already following the followUser, then to both the following and followers arrays, respectively 
