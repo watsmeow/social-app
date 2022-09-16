@@ -6,6 +6,7 @@ import path from 'path';
 import connectDB from './server/database/connection.cjs';
 import AuthRoute from './routes/AuthRoute.js';
 import UserRoute from './routes/UserRoute.js'
+import PostRoute from './routes/PostRoute.js'
 
 // const connectDB = require('./server/database/connection.cjs')
 
@@ -28,3 +29,4 @@ app.listen(PORT, () => {
 //routes
 app.use('/auth', AuthRoute);
 app.use('/user', UserRoute);
+app.use('/post', PostRoute);
