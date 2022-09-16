@@ -70,6 +70,7 @@ export const deleteUser = async (req, res) => {
     }
 }
 
+//follow another user
 export const followUser = async (req, res) => {
     const id = req.params.id
 
@@ -97,4 +98,34 @@ export const followUser = async (req, res) => {
             res.status(500).json({ message: "Error: Cannot follow user."})
         }
     }
-}
+};
+
+//unfollow another user
+export const unfollowUser = async (req, res) => {
+    const id = req.params.id
+
+    //gets the current user from the request body 
+    const { currentUserId } = req.body
+
+    //conditions that allow a user to unfollow another user
+    if (id === currentUserId) {
+        res.status(403).json({ message: "Error: You cannot follow yourself. Weirdo." })
+    } else {
+        try {
+            //defining who you're trying to unfollow
+            const followUser = await UserModel.findById(id)
+            //defining the user who is doing the unfollowing
+            const follower = await UserModel.findById(currentUserId)
+            //if the you are following the followUser, then to both the following and followers arrays, respectively 
+            if (followUser.followers.includes(currentUserId)) {
+                await followUser.updateOne({ $pull: {followers: currentUserId}});
+                await follower.updateOne({ $pull: {following: id}})
+                res.status(200).json({ message: "Unfollowed!"})
+            } else {
+                res.status(403).json({ message: "You're not following this user anyway." })
+            }
+        } catch (error) {
+            res.status(500).json({ message: "Error: Cannot follow user."})
+        }
+    }
+};
