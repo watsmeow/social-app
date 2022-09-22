@@ -1,27 +1,37 @@
 import UserModel from '../models/UserModel.js';
 import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 
 //new user registration
 export const registerUser = async (req, res) => {
-    //reqest body contains user info
-    const { username, password, firstname, lastname } = req.body;
-
     //encrypt the password, 10 is the amount of alteration to the password through hashing
     const salt = await bcrypt.genSalt(10)
-    const hashedPass = await bcrypt.hash(password, salt)
-
+    const hashedPass = await bcrypt.hash(req.body.password, salt)
+    req.body.password = hashedPass
+    const {username} = req.body
     //map user input/request into the user model schema
-    const newUser = new UserModel({ 
-        username, 
-        password: hashedPass, 
-        firstname, 
-        lastname 
-    });
+    const newUser = new UserModel(
+        req.body
+    );
 
     //save the new user to database
     try {
-        await newUser.save()
-        res.status(200).json(newUser)
+        //find the user that has the same username exported from req.body
+        const oldUser = await UserModel.findOne({username})
+        //if the user already exists
+        if (oldUser) {
+            return res.status(400).json({ message: "Username already exists."})
+        }
+        //saves and returns the new user
+        const user = await newUser.save()
+        //username is jwt token signature
+        const token = jwt.sign({
+            username: user.username, 
+            id: user._id
+        }, 
+        //second parameter is token, third token is the expiration period of the token
+        process.env.JWT_KEY, {expiresIn: '1h'})
+        res.status(200).json({user, token});
     } catch (error) {
         res.status(500).json({ message: "Error: Cannot save user to database."})
     }
@@ -39,9 +49,18 @@ export const loginUser = async (req, res) => {
         if (user) {
             //bcrypt compares password received from request with hashed password in the database
             const validity = await bcrypt.compare(password, user.password)
-
-            //if the password matches/is true send the user from the DB, if it's not true send forbidden
-            validity? res.status(200).json(user) : res.status(400).json({ message: "Incorrect password."})
+            //if there is no validity don't login, otherwise use token
+            if (!validity) {
+                res.status(400).json({ message: "Incorrect password."})
+            } else {
+                const token = jwt.sign({
+                    username: user.username, 
+                    id: user._id
+                }, 
+                //second parameter is token, third token is the expiration period of the token
+                process.env.JWT_KEY, {expiresIn: '1h'})
+                res.status(200).json({user, token});
+            }
         } else {
             res.status(404).json({ message: "User does not exist."})
         }

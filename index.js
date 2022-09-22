@@ -1,6 +1,7 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv'
+import cors from 'cors';
 import mongoose from 'mongoose';
 import path from 'path';
 import connectDB from './server/database/connection.cjs';
@@ -19,7 +20,7 @@ const PORT = process.env.PORT || 3000
 //middleware
 app.use(bodyParser.json({ limit: "30mb", extended: true }));
 app.use(bodyParser.urlencoded({ limit: "30mb", extended: true }));
-
+app.use(cors());
 connectDB()
 
 app.listen(PORT, () => {
